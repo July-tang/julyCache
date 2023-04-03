@@ -11,13 +11,13 @@ type cache struct {
 	cacheBytes int64
 }
 
-func (c *cache) add(key string, value ByteView) {
+func (c *cache) add(key string, value ByteView, expire ...int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.lru == nil {
 		c.lru = lru.New(c.cacheBytes, nil)
 	}
-	c.lru.Put(key, value)
+	c.lru.Put(key, value, expire...)
 }
 
 func (c *cache) get(key string) (value ByteView, ok bool) {

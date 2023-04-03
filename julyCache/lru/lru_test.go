@@ -1,8 +1,10 @@
 package lru
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+	"time"
 )
 
 type String string
@@ -14,11 +16,30 @@ func (d String) Len() int {
 func TestGet(t *testing.T) {
 	lru := New(int64(0), nil)
 	lru.Put("key1", String("1234"))
+	lru.Put("key2", String("1234"), 1)
 	if v, ok := lru.Get("key1"); !ok || string(v.(String)) != "1234" {
 		t.Fatalf("cache hit key1=1234 failed")
 	}
+	time.Sleep(1 * time.Second)
 	if _, ok := lru.Get("key2"); ok {
 		t.Fatalf("cache miss key2 failed")
+	}
+}
+
+func TestDeleteExpired(t *testing.T) {
+	lru := New(int64(0), nil)
+	lru.Put("key1", String("1234"), 1)
+	lru.Put("key2", String("1234"), 1)
+	lru.Put("key3", String("1234"), 1)
+	lru.Put("key4", String("1234"), 1)
+	lru.Put("key5", String("1234"), 1)
+	time.Sleep(900 * time.Millisecond)
+	for k, _ := range lru.cache {
+		fmt.Println(k)
+	}
+	time.Sleep(100 * time.Millisecond)
+	for k, _ := range lru.cache {
+		fmt.Println(k)
 	}
 }
 
@@ -30,7 +51,6 @@ func TestRemoveoldest(t *testing.T) {
 	lru.Put(k1, String(v1))
 	lru.Put(k2, String(v2))
 	lru.Put(k3, String(v3))
-
 	if _, ok := lru.Get("key1"); ok || lru.Len() != 2 {
 		t.Fatalf("Removeoldest key1 failed")
 	}
